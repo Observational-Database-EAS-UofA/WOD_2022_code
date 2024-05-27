@@ -97,7 +97,10 @@ class WODReader:
             "orig_filename": "",
             "shallowest_depth": "",
             "deepest_depth": "",
-            "parent_index": "",
+            "depth_row_size": "",
+            "press_row_size": "",
+            "temp_row_size": "",
+            "psal_row_size": "",
         }
         obs_attrs = {
             "depth": "z",
@@ -136,16 +139,18 @@ class WODReader:
                 press_list = ds["Pressure"].values
                 data_lists["depth"].extend(depth_list)
                 data_lists["press"].extend(press_list)
+                data_lists["depth_row_size"].append(len(depth_list))
+                data_lists["press_row_size"].append(len(press_list))
             elif "z" in ds and "Pressure" not in ds:
                 depth_list = ds["z"].values
-                press_list = [np.nan] * len(depth_list)
                 data_lists["depth"].extend(depth_list)
-                data_lists["press"].extend(press_list)
+                data_lists["depth_row_size"].append(len(depth_list))
+                data_lists["press_row_size"].append(0)
             elif "Pressure" in ds and "z" not in ds:
                 press_list = ds["Pressure"].values
-                depth_list = [np.nan] * press_list
                 data_lists["press"].extend(press_list)
-                data_lists["depth"].extend(depth_list)
+                data_lists["press_row_size"].append(len(press_list))
+                data_lists["depth_row_size"].append(0)
             else:
                 continue
 
@@ -159,31 +164,28 @@ class WODReader:
             else:
                 data_lists["shallowest_depth"].append(min(depth_list))
             data_lists["deepest_depth"].append(max(depth_list))
-            data_lists["parent_index"].extend([i] * len(depth_list))
 
             if "Salinity" in ds:
                 psal_list = ds["Salinity"].values
                 data_lists["psal"].extend(ds["Salinity"].values)
+                data_lists["psal_row_size"].append(len(psal_list))
                 if "Salinity_WODflag" in ds:
                     data_lists["psal_flag"].extend(ds["Salinity_WODflag"].values)
                 else:
                     data_lists["psal_flag"].extend([np.nan] * len(psal_list))
             else:
-                psal_list = [np.nan] * len(depth_list)
-                data_lists["psal"].extend(psal_list)
-                data_lists["psal_flag"].extend(psal_list)
+                data_lists["psal_row_size"].append(0)
 
             if "Temperature" in ds:
                 temp_list = ds["Temperature"].values
                 data_lists["temp"].extend(temp_list)
+                data_lists["temp_row_size"].append(len(temp_list))
                 if "Temperature_WODflag" in ds:
                     data_lists["temp_flag"].extend(ds["Temperature_WODflag"].values)
                 else:
                     data_lists["temp_flag"].extend([np.nan] * temp_list)
             else:
-                temp_list = [np.nan] * len(depth_list)
-                data_lists["temp"].extend(temp_list)
-                data_lists["temp_flag"].extend(temp_list)
+                data_lists["temp_row_size"].append(0)
 
             # get metadata
             if "orig_filename" in ds and len(ds["orig_filename"]) > 0:
@@ -259,14 +261,13 @@ class WODReader:
                     if attr not in ["lat", "lon", "timestamp", "parent_index"]
                 },
                 # measurements
-                parent_index=xr.DataArray(data_list["parent_index"], dims=["obs"]),
-                depth=xr.DataArray(data_list["depth"], dims=["obs"]),
-                depth_flag=xr.DataArray(data_list["depth_flag"], dims=["obs"]),
-                press=xr.DataArray(data_list["press"], dims=["obs"]),
-                temp=xr.DataArray(data_list["temp"], dims=["obs"]),
-                temp_flag=xr.DataArray(data_list["temp_flag"], dims=["obs"]),
-                psal=xr.DataArray(data_list["psal"], dims=["obs"]),
-                psal_flag=xr.DataArray(data_list["psal_flag"], dims=["obs"]),
+                depth=xr.DataArray(data_list["depth"], dims=["depth_obs"]),
+                depth_flag=xr.DataArray(data_list["depth_flag"], dims=["depth_obs"]),
+                press=xr.DataArray(data_list["press"], dims=["press_obs"]),
+                temp=xr.DataArray(data_list["temp"], dims=["temp_obs"]),
+                temp_flag=xr.DataArray(data_list["temp_flag"], dims=["temp_obs"]),
+                psal=xr.DataArray(data_list["psal"], dims=["psal_obs"]),
+                psal_flag=xr.DataArray(data_list["psal_flag"], dims=["psal_obs"]),
             ),
             attrs=dict(
                 dataset_name="WOD_2022",
