@@ -25,7 +25,6 @@ from tqdm import tqdm
 import os
 import numpy as np
 from datetime import datetime
-import threading
 import sys
 
 
@@ -216,9 +215,9 @@ class WODReader:
             # check if the file is too big. If so, save the file and start again
             i += 1
             if self.is_variable_too_big(data_lists):
-                for attr in data_lists:
-                    print(f"attr: {attr} - len: {len(data_lists[attr])}")
-                print("-" * 100)
+                # for attr in data_lists:
+                #     print(f"attr: {attr} - len: {len(data_lists[attr])}")
+                # print("-" * 100)
                 self.create_dataset(data_path, save_path, data_lists, string_attrs, file_counter)
                 string_attrs, obs_attrs, data_lists, i = self.initialize_variables()
                 file_counter += 1
@@ -241,18 +240,8 @@ class WODReader:
         ds = xr.Dataset(
             coords=dict(
                 timestamp=(["profile"], data_list["timestamp"]),
-                lat=(
-                    [
-                        "profile",
-                    ],
-                    data_list["lat"],
-                ),
-                lon=(
-                    [
-                        "profile",
-                    ],
-                    data_list["lon"],
-                ),
+                lat=(["profile"], data_list["lat"]),
+                lon=(["profile"], data_list["lon"]),
             ),
             data_vars=dict(
                 **{
@@ -269,10 +258,7 @@ class WODReader:
                 psal=xr.DataArray(data_list["psal"], dims=["psal_obs"]),
                 psal_flag=xr.DataArray(data_list["psal_flag"], dims=["psal_obs"]),
             ),
-            attrs=dict(
-                dataset_name="WOD_2022",
-                creation_date=str(datetime.now().strftime("%Y-%m-%d %H:%M")),
-            ),
+            attrs=dict(dataset_name="WOD_2022", creation_date=str(datetime.now().strftime("%Y-%m-%d %H:%M"))),
         )
         ds.to_netcdf(f"WOD_2022_{file_counter}_raw.nc")
         os.chdir(data_path)
